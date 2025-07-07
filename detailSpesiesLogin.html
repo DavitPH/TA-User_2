@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Spesies - Achatina fulica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+
+    <style>
+        /* General body and html settings to prevent horizontal scroll */
+        html,
+        body {
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* Base Sidebar and Header/Main Content Container */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar styles */
+        .sidebar-wrapper {
+            width: 250px;
+            flex-shrink: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            background-color: #15803D;
+            color: white;
+            padding: 1.5rem 1rem;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            z-index: 50;
+            transition: transform 0.4s ease-in-out;
+            transform: translateX(0);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 0.5rem 0;
+        }
+
+        .sidebar-header img {
+            height: 50px;
+            width: 50px;
+            margin-right: 0.75rem;
+        }
+
+        .sidebar-header span {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar nav li {
+            margin-bottom: 0.0625rem;
+        }
+
+        .sidebar nav li .nav-item {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.3rem 1rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            transition: background-color 0.2s, color 0.2s;
+            cursor: pointer;
+        }
+
+        .sidebar nav li .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sidebar nav li .nav-item.active {
+            background-color: #106F30;
+            color: white;
+        }
+
+        .sidebar nav li .nav-item i {
+            margin-right: 1rem;
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        /* Main content area (Header + Body Content) */
+        .main-content-area-wrapper {
+            flex-grow: 1;
+            margin-left: 250px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* Header styles */
+        header {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        header .hamburger-icon {
+            font-size: 1.5rem;
+            color: #4A5568;
+            cursor: pointer;
+            display: none;
+            margin-right: 1rem;
+        }
+
+        header .search-container {
+            flex-grow: 1;
+            max-width: 400px;
+            position: relative;
+            margin-right: 1.5rem;
+        }
+
+        header .search-input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            padding-left: 2.5rem;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.375rem;
+            background-color: #F8FAFC;
+            font-size: 0.9rem;
+            color: #2D3748;
+        }
+
+        header .search-input::placeholder {
+            color: #A0AEC0;
+        }
+
+        header .search-input:focus {
+            outline: none;
+            border-color: #4299E1;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+        }
+
+        header .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #A0AEC0;
+        }
+
+        header .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        header .user-actions>button,
+        header .user-actions>a {
+            color: #4A5568;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: color 0.2s;
+        }
+
+        header .user-actions>button:hover,
+        header .user-actions>a:hover {
+            color: #2D3748;
+        }
+
+        header .user-actions .profile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 9999px;
+            background-color: #CBD5E0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #4A5568;
+            overflow: hidden;
+        }
+
+        header .user-actions .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Main content area below the header */
+        main.main-content-body {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content-area {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        /* Breadcrumbs container */
+        .breadcrumb-container {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .breadcrumb {
+            color: #6c757d;
+            flex-wrap: wrap;
+            overflow: hidden;
+        }
+
+        .breadcrumb li+li::before {
+            content: ">";
+            padding: 0 0.5rem;
+            color: #a0aec0;
+        }
+
+        .breadcrumb li a {
+            color: #4a5568;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb li a:hover {
+            color: #1a4a2a;
+        }
+
+        .breadcrumb li:last-child span {
+            color: #1a4a2a;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        /* New Label Styles */
+        .new-label {
+            background-color: #F97A00;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.3rem;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        /* Consistent main content */
+        .main-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            min-height: 800px;
+        }
+
+        /* Menyamakan warna btn di action-buttons dengan tema hijau tua */
+        .species-header .action-buttons .btn {
+            background-color: #F97A00;
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            border: none;
+        }
+
+        .species-header .action-buttons .btn:hover {
+            background-color: #e06c00;
+        }
+
+        /* Updated h1 styling: always row, align items baseline for better visual alignment */
+        .species-header h1 {
+            color: #2c3e50;
+            font-size: 2.25rem;
+            font-weight: 700;
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            gap: 0.75rem;
+        }
+
+        .species-header p {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Species Gallery Default (Mobile-first vertical stacking) */
+        .species-gallery {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .main-image-wrapper {
+            position: relative;
+            flex-grow: 1;
+            flex-basis: 100%;
+            max-width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            background-color: transparent;
+            min-height: 220px;
+            height: auto;
+            aspect-ratio: 4/3;
+        }
+
+        .main-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+
+        .main-image-wrapper .nav-arrow {
+            display: none;
+        }
+
+        /* Styles for thumbnail gallery - Mobile First (Horizontal Scroll) */
+        .thumbnail-gallery {
+            display: flex;
+            flex-direction: row;
+            gap: 0.5rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            max-height: none;
+            flex-basis: 100%;
+            padding-right: 0;
+            justify-content: flex-start;
+            flex-wrap: nowrap;
+        }
+
+        /* Inner container for thumbnails to control their layout */
+        .thumbnail-gallery #thumbnailContainer {
+            display: flex;
+            flex-direction: row;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+        }
+
+        .thumbnail-gallery img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .thumbnail-gallery img.active {
+            border-color: #1a4a2a;
+        }
+
+        .thumbnail-gallery .thumb-arrow {
+            display: none;
+        }
+
+        .species-tabs {
+            border-bottom: 1px solid #e0e0e0;
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .species-tabs button {
+            background-color: transparent;
+            border: none;
+            padding: 0.75rem 1.0rem;
+            cursor: pointer;
+            font-weight: 500;
+            color: #555;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            flex-grow: 1;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .species-tabs button.active {
+            color: #1a4a2a;
+            border-bottom-color: #1a4a2a;
+        }
+
+        .tab-content {
+            padding-top: 1.5rem;
+        }
+
+        .data-table-container {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+        }
+
+        .data-table th {
+            background-color: #f8f8f8;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        .data-table tr:nth-child(odd) {
+            background-color: #fcfcfc;
+        }
+
+        /* Perubahan untuk map-container menjadi elemen Leaflet */
+        #speciesMapContainer {
+            width: 80%;
+            max-width: 700px;
+            height: 400px;
+            background-color: #f0f0f0;
+            border-radius: 0.5rem;
+            border: 1px solid #ddd;
+            overflow: hidden;
+            margin-left: auto;
+            margin-right: auto;
+            z-index: 0;
+        }
+
+        /* Gaya untuk tombol filter peta jika ada banyak peta GeoJSON */
+        .map-filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .map-filter-buttons button {
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            cursor: pointer;
+            border: 1px solid #cbd5e0;
+        }
+
+        .map-filter-buttons button:hover {
+            background-color: #cbd5e0;
+        }
+
+        .map-filter-buttons button.active {
+            background-color: #1a4a2a;
+            color: white;
+            border-color: #1a4a2a;
+        }
+
+        .comments-section h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+
+        .comment-form textarea {
+            width: 100%;
+            min-height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            resize: vertical;
+            outline: none;
+        }
+
+        .comment-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #1a4a2a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-right: 1rem;
+        }
+
+        .comment-content {
+            flex-grow: 1;
+        }
+
+        .comment-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .comment-meta {
+            font-size: 0.875rem;
+            color: #888;
+            margin-left: 0.5rem;
+        }
+
+        .comment-body {
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .comment-actions {
+            margin-top: 0.5rem;
+        }
+
+        .comment-actions .reply-btn {
+            background: none;
+            border: none;
+            color: #007bff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .comment-actions .reply-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Gaya untuk tombol Kirim Komentar dan Kirim Balasan */
+        .btn-primary {
+            background-color: #F97A00;
+            /* Warna oranye */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #e06c00;
+            /* Warna oranye lebih gelap saat hover */
+        }
+
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            border: none;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
+        }
+
+        .nested-comment {
+            margin-top: 1rem;
+            margin-left: 2rem;
+            border-left: 2px solid #e0e0e0;
+            padding-left: 1rem;
+        }
+
+        .trash-icon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #dc3545;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .trash-icon:hover {
+            color: #c82333;
+        }
+
+        #notificationMessage {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #notificationMessage.show {
+            opacity: 1;
+        }
+
+        #notificationMessage.success {
+            background-color: #28a745;
+        }
+
+        #notificationMessage.error {
+            background-color: #dc3545;
+        }
+
+
+        /* --- MOBILE SPECIFIC STYLES --- */
+        @media (max-width: 767px) {
+
+            /* Adjust sidebar for off-canvas effect */
+            .sidebar-wrapper {
+                transform: translateX(-100%);
+                box-shadow: 3px 0 10px rgba(0, 0, 0, 0.3);
+            }
+
+            .sidebar-wrapper.open {
+                transform: translateX(0);
+            }
+
+            /* Header on mobile */
+            header {
+                position: fixed;
+                width: 100%;
+                left: 0;
+                top: 0;
+                padding: 0.75rem 1rem;
+                justify-content: flex-start;
+                gap: 0.5rem;
+                z-index: 60;
+            }
+
+            header .hamburger-icon {
+                display: block;
+            }
+
+            header .search-container {
+                margin-right: 0.5rem;
+                max-width: none;
+            }
+
+            header .user-actions {
+                gap: 0.5rem;
+            }
+
+            header .user-actions>button,
+            header .user-actions>a {
+                font-size: 1rem;
+            }
+
+            header .user-actions .profile-avatar {
+                width: 30px;
+                height: 30px;
+            }
+
+            /* Main content area wrapper on mobile */
+            .main-content-area-wrapper {
+                margin-left: 0;
+                padding-top: 4rem;
+                height: auto;
+            }
+
+            /* Overlay for when sidebar is open */
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+                display: none;
+                opacity: 0;
+                transition: opacity 0.4s ease-in-out;
+            }
+
+            .overlay.active {
+                display: block;
+                opacity: 1;
+            }
+
+            /* Prevent scrolling of body when sidebar is open */
+            body.sidebar-open {
+                overflow: hidden;
+            }
+
+            /* Dim and disable main content when sidebar is open */
+            body.sidebar-open .main-content-area-wrapper {
+                pointer-events: none;
+                filter: blur(2px) grayscale(50%);
+                transition: filter 0.4s ease-in-out;
+            }
+
+            body.sidebar-open header {
+                pointer-events: none;
+                filter: blur(2px) grayscale(50%);
+                transition: filter 0.4s ease-in-out;
+            }
+
+            /* Sidebar close button inside sidebar (visible only on mobile) */
+            .sidebar-close-btn {
+                position: absolute;
+                top: 1.5rem;
+                right: 1.5rem;
+                font-size: 1.8rem;
+                color: white;
+                cursor: pointer;
+                z-index: 60;
+                display: block;
+            }
+
+            /* Main content padding on mobile */
+            .main-content {
+                padding: 1rem;
+                min-height: auto;
+            }
+
+            /* Species Header on mobile */
+            .species-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            /* h1 in mobile should now be row, so only font-size changes */
+            .species-header h1 {
+                font-size: 1.75rem;
+                flex-direction: row;
+                align-items: baseline;
+                flex-wrap: wrap;
+            }
+
+            .species-header h1 #conservationStatus {
+                flex-shrink: 0;
+            }
+
+            .species-header p {
+                font-size: 1rem;
+            }
+
+            .species-header .action-buttons {
+                width: 100%;
+                display: flex;
+                justify-content: flex-start;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                margin-top: 1rem;
+            }
+
+            /* Species Gallery on mobile */
+            .species-gallery {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .main-image-wrapper {
+                flex-basis: 100%;
+                max-width: 100%;
+                height: 250px;
+                aspect-ratio: auto;
+            }
+
+            .thumbnail-gallery {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                width: 100%;
+                max-height: none;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding-right: 0;
+            }
+
+            .thumbnail-gallery img {
+                width: 80px;
+                height: 80px;
+                flex-shrink: 0;
+            }
+
+            .species-tabs button {
+                flex-basis: auto;
+                padding: 0.75rem 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            /* Map on mobile */
+            #speciesMapContainer {
+                width: 100%;
+                max-width: 100%;
+                height: 300px;
+            }
+
+            /* Comments section on mobile */
+            .comment-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .comment-avatar {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+
+            .nested-comment {
+                margin-left: 1rem;
+                padding-left: 0.5rem;
+            }
+
+            .trash-icon {
+                top: 0.75rem;
+                right: 0.75rem;
+            }
+
+            /* Breadcrumbs font size on mobile */
+            .breadcrumb {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* --- DESKTOP SPECIFIC STYLES (Revert mobile-only styles) --- */
+        @media (min-width: 768px) {
+            .sidebar-wrapper {
+                transform: translateX(0);
+            }
+
+            .hamburger-icon {
+                display: none;
+            }
+
+            header {
+                position: static;
+                width: auto;
+                left: auto;
+                top: auto;
+                z-index: auto;
+                padding: 1rem 1.5rem;
+            }
+
+            .main-content-area-wrapper {
+                margin-left: 250px;
+                padding-top: 0;
+            }
+
+            .overlay {
+                display: none !important;
+            }
+
+            body.sidebar-open {
+                overflow: auto;
+            }
+
+            body.sidebar-open .main-content-area-wrapper,
+            body.sidebar-open header {
+                pointer-events: auto;
+                filter: none;
+            }
+
+            .sidebar-close-btn {
+                display: none;
+            }
+
+            .species-gallery {
+                flex-direction: row;
+            }
+
+            .main-image-wrapper {
+                flex-basis: 65%;
+                max-width: 65%;
+            }
+
+            .thumbnail-gallery {
+                flex-direction: column;
+                overflow-y: auto;
+                overflow-x: hidden;
+                max-height: 220px;
+                flex-basis: 35%;
+            }
+
+            /* Ensure the inner thumbnail container also stacks vertically on desktop */
+            .thumbnail-gallery #thumbnailContainer {
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+
+            #speciesMapContainer {
+                height: 400px;
+            }
+        }
+
+        /* Active navigation item styling */
+        #taxonomy-nav .nav-item.active {
+            background-color: #106F30;
+            color: white;
+        }
+
+        /* Border on taxonomy sub-levels */
+        #taxonomy-nav ul.space-y-1.ml-4.border-l {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <div class="sidebar-wrapper" id="sidebarWrapper">
+            <i class="fas fa-times sidebar-close-btn md:hidden" id="sidebarCloseBtn"></i>
+
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <img src="images/logo.png" alt="Invertebrata Kaltara Logo">
+                    <span>Invertebrata Kaltara</span>
+                </div>
+
+                <nav id="taxonomy-nav" class="flex-grow">
+                </nav>
+            </aside>
+        </div>
+
+        <div class="main-content-area-wrapper">
+            <header>
+                <i class="fas fa-bars hamburger-icon md:hidden" id="hamburgerMenu"></i>
+
+                <div class="search-container">
+                    <input type="text" placeholder="Cari spesies..." class="search-input" id="searchInput">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+
+                <div class="user-actions">
+                    <a href="#" class="profile-avatar">
+                        <img src="images/profil.jpg" alt="DA">
+                    </a>
+                </div>
+            </header>
+
+            <main class="main-content-body flex-1">
+                <div class="breadcrumb-container">
+                    <ul class="breadcrumb flex text-sm" id="dynamic-breadcrumbs">
+                    </ul>
+                </div>
+
+                <section class="main-content">
+                    <div
+                        class="species-header flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <div>
+                            <h1 id="speciesCommonName">
+                                <span id="conservationStatus"
+                                    class="bg-gray-800 bg-opacity-70 text-white text-sm font-normal px-2 py-1 rounded-full whitespace-nowrap"></span>
+                            </h1>
+                            <p class="mt-1" id="speciesScientificName"></p>
+                        </div>
+                        <div class="action-buttons mt-4 md:mt-0">
+                        </div>
+                    </div>
+
+                    <div class="species-gallery mb-8">
+                        <div class="main-image-wrapper">
+                            <img id="mainSpeciesImage" src="" alt="Main species image" class="rounded-lg">
+                        </div>
+                        <div class="thumbnail-gallery">
+                            <div id="thumbnailContainer" class="flex gap-2 w-full">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="species-tabs">
+                        <button class="active" onclick="openTab(event, 'deskripsi')">Deskripsi</button>
+                        <button onclick="openTab(event, 'klasifikasi')">Klasifikasi</button>
+                        <button onclick="openTab(event, 'habitat')">Habitat</button>
+                        <button onclick="openTab(event, 'ekologi')">Peran Ekologi</button>
+                        <button onclick="openTab(event, 'peta-persebaran')">Peta Persebaran</button>
+                        <button onclick="openTab(event, 'sumber-data')">Sumber Data</button>
+                    </div>
+
+                    <div id="deskripsi" class="tab-content">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Deskripsi Ilmiah</h3>
+                        <p class="text-gray-700 leading-relaxed" id="deskripsiContent">
+                        </p>
+                    </div>
+
+                    <div id="klasifikasi" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Klasifikasi Ilmiah</h3>
+                        <div class="data-table-container border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="data-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="py-2 px-4 text-left text-gray-600 font-semibold">Kategori</th>
+                                        <th class="py-2 px-4 text-left text-gray-600 font-semibold">Nama</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="klasifikasiTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="habitat" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Habitat Spesies</h3>
+                        <p class="text-gray-700 leading-relaxed" id="habitatContent">
+                        </p>
+                    </div>
+
+                    <div id="ekologi" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">Peran Ekologi</h3>
+                        <p class="text-gray-700 leading-relaxed" id="ekologiContent">
+                        </p>
+                    </div>
+
+                    <div id="peta-persebaran" class="tab-content hidden">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Peta Persebaran</h2>
+                        <div class="map-filter-buttons" id="mapFilterButtons">
+                        </div>
+                        <div id="speciesMapContainer" class="border border-gray-300 rounded-lg mb-8">
+                        </div>
+                    </div>
+
+                    <div id="sumber-data" class="tab-content hidden">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">Sumber Data</h2>
+                        <div class="data-table-container border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="data-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="py-2 px-4 text-left text-gray-600 font-semibold">Kategori</th>
+                                        <th class="py-2 px-4 text-left text-gray-600 font-semibold">Informasi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sumberDataTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="comments-section mt-8">
+                        <h2 class="mb-4" id="commentCountHeader">Komentar (0)</h2>
+
+                        <div class="comment-form bg-white p-6 rounded-lg shadow-sm mb-6">
+                            <textarea id="mainCommentTextarea" placeholder="Tulis komentar Anda..."
+                                class="block w-full border border-gray-300 rounded-lg p-3 focus:ring focus:ring-blue-200 focus:border-blue-500 mb-4"></textarea>
+                            <div class="flex justify-end">
+                                <button id="kirimKomentarBtn" class="btn btn-primary">Kirim Komentar</button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4" id="commentsList">
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <div id="notificationMessage" class="hidden"></div>
+
+        <div class="overlay" id="sidebarOverlay"></div>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        <script>
+            // Data taksonomi untuk navigasi sidebar - DISEMPURNAKAN AGAR SAMA DENGAN INDEX.HTML
+            const taxonomyData = {
+                "Semua Invertebrata": {
+                    "Protozoa": [
+                        "Amoebozoa",
+                        "SAR (Stramenopiles, Alveolata, Rhizaria)",
+                        "Excavata",
+                        "Opisthokonta (terkait hewan dan jamur)"
+                    ],
+                    "Cnidaria": ["Hydrozoa", "Scyphozoa", "Cubozoa", "Anthozoa"],
+                    "Ctenophora": ["Tentaculata"],
+                    "Echinodermata": ["Asteroidea", "Ophiuroidea", "Echinoidea", "Holothuroidea", "Crinoidea"],
+                    "Plathyhelminthes": ["Turbellaria", "Trematoda", "Cestoda", "Monogenea"],
+                    "Nematoda": ["Secernentea"],
+                    "Rotifera": ["Bdelloidea"],
+                    "Nematomorpha": ["Gordioida"],
+                    "Gastrotricha": ["Chaetonotida"],
+                    "Kinorhyncha": ["Cyclorhagida"],
+                    "Annelida": ["Polychaeta", "Oligochaeta", "Hirudinea"],
+                    "Mollusca": ["Gastropoda", "Bivalvia", "Cephalopoda", "Polyplacophora", "Scaphopoda", "Monoplacophora", "Aplacophora"],
+                    "Arthropoda": {
+                        "Chelicerata": ["Arachnida", "Merostomata", "Pycnogonida", "Xiphosura"],
+                        "Myriapoda": ["Chilopoda", "Diplopoda", "Pauropoda", "Symphyla"],
+                        "Crustacea": ["Malacostraca", "Maxillopoda", "Remipedia", "Branchiopoda"],
+                        "Hexapoda": ["Collembola", "Protura", "Diplura", "Insecta"]
+                    }
+                }
+            };
+
+            // Data detail spesies
+            const allSpeciesDetails = [
+                {
+                    id: 12,
+                    name: "Bekicot",
+                    scientificName: "Achatina fulica",
+                    filum: "Mollusca", // Hanya nama filum
+                    subFilum: null,
+                    kelas: "Gastropoda", // Kelas
+                    images: [
+                        "images/Bekicot.jpg",
+                        "images/Bekicot 2.jpg",
+                        "images/Bekicot 3.jpg",
+                        "images/Bekicot 4.jpg",
+                        "images/Bekicot 5.jpg",
+                        "images/Bekicot 6.jpg",
+                        "images/Bekicot 7.jpg"
+                    ],
+                    description: "<i>Achatina fulica</i> (Bekicot) adalah spesies siput darat besar, umum ditemukan di banyak bagian dunia sebagai spesies invasif. Berasal dari Afrika Timur, bekicot ini memiliki cangkang berbentuk kerucut yang bervariasi dalam warna dan pola, seringkali dengan garis-garis coklat dan kuning. Mereka bersifat hermafrodit dan mampu menghasilkan telur dalam jumlah besar. Bekicot merupakan hewan herbivora yang memakan berbagai jenis tumbuhan, buah-buahan, dan sayuran, menjadikannya hama pertanian yang signifikan. Mereka aktif di malam hari dan selama periode kelembaban tinggi. Meskipun tidak berbahaya bagi manusia secara langsung, mereka dapat menjadi vektor penyakit dan parasit tertentu.",
+                    habitat: "Bekicot (<i>Achatina fulica</i>) sangat adaptif dan dapat hidup di berbagai habitat tropis dan subtropis. Mereka sering ditemukan di area pertanian, kebun, hutan, dan area perkotaan yang lembap. Mereka membutuhkan kelembaban tinggi dan suhu hangat untuk bertahan hidup dan berkembang biak. Mereka aktif di malam malam atau setelah hujan, bersembunyi di bawah daun, batu, atau puing-puing selama siang hari untuk menghindari kekeringan. Kemampuan mereka untuk hibernasi di musim kering atau kondisi tidak menguntungkan juga berkontribusi pada penyebaran dan keberhasilan invasif mereka.",
+                    ecologyRole: "Sebagai spesies invasif, Bekicot (<i>Achatina fulica</i>) memiliki dampak ekologi dan ekonomi yang signifikan. Mereka adalah hama pertanian yang merusak, memakan berbagai tanaman budidaya dan menyebabkan kerugian besar. Mereka juga dapat bersaing dengan spesies siput asli untuk sumber daya. Selain itu, bekicot ini dapat menjadi inang perantara bagi nematoda parasit seperti <i>Angiostrongylus cantonensis</i> (cacing paru-paru tikus), yang dapat menyebabkan meningitis eosinofilik pada manusia jika bekicot yang terinfeksi dikonsumsi mentah atau kurang matang.",
+                    peta_persebaran: [ // Contoh data GeoJSON untuk Bekicot
+                        {
+                            "type": "Feature",
+                            "properties": { "name": "Bekicot Spot A" },
+                            "geometry": {
+                                "type": "Polygon",
+                                "coordinates": [[
+                                    [117.6, 3.5],
+                                    [117.7, 3.5],
+                                    [117.7, 3.4],
+                                    [117.6, 3.4],
+                                    [117.6, 3.5]
+                                ]]
+                            }
+                        },
+                        {
+                            "type": "Feature",
+                            "properties": { "name": "Bekicot Spot B (Tidung Pale)" }, // Nama diubah untuk kejelasan
+                            "geometry": {
+                                // Mengubah Point menjadi Polygon kecil di sekitar Tidung Pale
+                                "type": "Polygon",
+                                "coordinates": [[
+                                    [117.14, 2.91],
+                                    [117.16, 2.91],
+                                    [117.16, 2.89],
+                                    [117.14, 2.89],
+                                    [117.14, 2.91]
+                                ]]
+                            }
+                        }
+                    ],
+                    researcher: "Norman Saputra, S.Si., M.Biol.",
+                    researchMethod: "Observasi Lapangan",
+                    researchDate: "12 Mei 2025",
+                    researchLocation: ["Danau Semayang", "Tidung Pale"],
+                    conservationStatus: "Not Evaluated"
+                },
+                // Add other species here if any
+            ];
+
+            // Hamburger Menu Elements
+            const hamburgerMenu = document.getElementById('hamburgerMenu');
+            const sidebarWrapper = document.getElementById('sidebarWrapper');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            // Function to open the sidebar
+            function openSidebar() {
+                sidebarWrapper.classList.add('open');
+                sidebarOverlay.classList.add('active');
+                document.body.classList.add('sidebar-open');
+            }
+
+            // Function to close the sidebar
+            function closeSidebar() {
+                sidebarWrapper.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+            }
+
+            // Event Listeners for Hamburger and Overlay
+            if (hamburgerMenu) {
+                hamburgerMenu.addEventListener('click', openSidebar);
+            }
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+
+            // Close button for mobile sidebar
+            const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+            if (sidebarCloseBtn) {
+                sidebarCloseBtn.addEventListener('click', closeSidebar);
+            }
+
+            // Close sidebar when a navigation item is clicked
+            const taxonomyNav = document.getElementById('taxonomy-nav');
+            taxonomyNav.addEventListener('click', (event) => {
+                if (event.target.closest('.nav-item')) { // Changed from .nav-list-item or .nav-item-header
+                    if (window.innerWidth < 768) {
+                        closeSidebar();
+                    }
+                }
+            });
+
+            // Add a listener to close sidebar on resize if it becomes desktop view
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) {
+                    closeSidebar();
+                }
+            });
+
+            // --- Logika Galeri ---
+            let currentSlide = 0;
+            const mainSpeciesImage = document.getElementById('mainSpeciesImage');
+            const thumbnailContainer = document.getElementById('thumbnailContainer');
+            let currentSpeciesImages = [];
+
+            function setCurrentSlide(index) {
+                currentSlide = index;
+                if (currentSlide < 0) {
+                    currentSlide = currentSpeciesImages.length - 1;
+                } else if (currentSlide >= currentSpeciesImages.length) {
+                    currentSlide = 0;
+                }
+
+                mainSpeciesImage.src = currentSpeciesImages[currentSlide];
+
+                const thumbnails = thumbnailContainer.querySelectorAll('img');
+                thumbnails.forEach(thumb => thumb.classList.remove('active'));
+                if (thumbnails[currentSlide]) {
+                    thumbnails[currentSlide].classList.add('active');
+                    thumbnails[currentSlide].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest'
+                    });
+                }
+            }
+
+            function renderThumbnails(imagesArray) {
+                thumbnailContainer.innerHTML = '';
+                if (!imagesArray || imagesArray.length === 0) {
+                    thumbnailContainer.innerHTML = '<p class="text-gray-500 text-sm text-center">Tidak ada gambar tersedia.</p>';
+                    mainSpeciesImage.src = 'https://placehold.co/600x400/cccccc/999999?text=No+Image';
+                    return;
+                }
+
+                imagesArray.forEach((src, index) => {
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.alt = `Thumbnail ${index + 1}`;
+                    img.className = 'rounded-lg border-2 border-transparent cursor-pointer';
+                    img.onclick = () => setCurrentSlide(index);
+                    thumbnailContainer.appendChild(img);
+                });
+                setCurrentSlide(0);
+            }
+
+            // --- Logika Tab ---
+            function openTab(evt, tabName) {
+                let i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tab-content");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.querySelectorAll(".species-tabs button");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].classList.remove("active");
+                }
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.classList.add("active");
+            }
+
+            // --- Logika Sidebar Taksonomi ---
+            /**
+             * Helper function to find the full path of a category in the taxonomy data.
+             * @param {object|Array|string} data - The taxonomy data object (or a part of it).
+             * @param {string} targetCategory - The category to find the path for.
+             * @param {Array<string>} currentPath - The current path accumulated during recursion.
+             * @returns {Array<string>|null} - The full path as an array of strings, or null if not found.
+             */
+            function findCategoryPath(data, targetCategory, currentPath = []) {
+                if (typeof data === 'string') {
+                    if (data === targetCategory) {
+                        return [...currentPath, data];
+                    }
+                } else if (Array.isArray(data)) {
+                    if (data.includes(targetCategory)) {
+                        return [...currentPath, targetCategory];
+                    }
+                    for (const item of data) {
+                        const foundPath = findCategoryPath(item, targetCategory, currentPath);
+                        if (foundPath) return foundPath;
+                    }
+                } else if (typeof data === 'object' && data !== null) {
+                    for (const key in data) {
+                        const newPath = [...currentPath, key];
+                        if (key === targetCategory) {
+                            return newPath;
+                        }
+                        const foundPath = findCategoryPath(data[key], targetCategory, newPath);
+                        if (foundPath) {
+                            return foundPath;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // Renders the taxonomy navigation in the sidebar
+            function renderTaxonomy(data, parentElement, level = 0, currentPath = []) {
+                const ul = document.createElement('ul');
+                ul.className = `space-y-1 ${level > 0 ? 'ml-4 border-l border-green-500 pl-2' : ''}`;
+
+                Object.keys(data).sort().forEach(key => {
+                    const li = document.createElement('li');
+                    const fullPathSegment = [...currentPath, key];
+                    const displayKey = key.replace(/_/g, ' ');
+
+                    let fontWeightClass = 'font-normal';
+                    let iconClass = '';
+                    let contentHTML = `<span>${displayKey}</span>`;
+
+                    if (key === "Semua Invertebrata") {
+                        iconClass = 'fas fa-globe';
+                        fontWeightClass = 'font-bold';
+                    } else if (key === "Arthropoda") {
+                        iconClass = 'fas fa-folder';
+                        fontWeightClass = 'font-bold';
+                    } else if (typeof data[key] === 'object' && !Array.isArray(data[key])) {
+                        iconClass = 'fas fa-folder';
+                        if (level === 0) {
+                            fontWeightClass = 'font-bold';
+                        } else {
+                            fontWeightClass = 'font-semibold';
+                        }
+                    } else if (Array.isArray(data[key])) {
+                        iconClass = 'fas fa-sitemap';
+                        fontWeightClass = 'font-bold';
+                    } else {
+                        iconClass = 'fas fa-arrow-right';
+                        fontWeightClass = 'font-normal';
+                    }
+
+                    const navItemDiv = document.createElement('div');
+                    navItemDiv.className = `nav-item cursor-pointer text-sm py-1 px-3 rounded-lg ${fontWeightClass}`;
+                    navItemDiv.style.paddingLeft = `${0.5 + level * 1}rem`;
+
+                    const iconElement = document.createElement('i');
+                    iconElement.className = `${iconClass} mr-2`;
+                    navItemDiv.appendChild(iconElement);
+
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = displayKey;
+                    navItemDiv.appendChild(textSpan);
+
+                    if (key === "Gastropoda" && fullPathSegment.includes("Mollusca")) {
+                        const newLabelSpan = document.createElement('span');
+                        newLabelSpan.className = 'new-label';
+                        newLabelSpan.textContent = 'NEW';
+                        navItemDiv.appendChild(newLabelSpan);
+                    }
+
+                    navItemDiv.dataset.category = key;
+
+                    navItemDiv.addEventListener('click', () => {
+                        const categoryToFilter = navItemDiv.dataset.category;
+                        window.location.href = `index.html?category=${encodeURIComponent(categoryToFilter)}`;
+                    });
+
+                    li.appendChild(navItemDiv);
+                    ul.appendChild(li);
+
+                    if (typeof data[key] === 'object' && !Array.isArray(data[key])) {
+                        renderTaxonomy(data[key], li, level + 1, fullPathSegment);
+                    } else if (Array.isArray(data[key])) {
+                        data[key].sort().forEach(subItemKey => {
+                            const subLi = document.createElement('li');
+                            const subItemFullPathSegment = [...fullPathSegment, subItemKey];
+
+                            const subNavItemDiv = document.createElement('div');
+                            subNavItemDiv.className = `nav-item cursor-pointer text-xs py-0.5 px-3 rounded-lg font-normal`;
+                            subNavItemDiv.style.paddingLeft = `${0.5 + (level + 1) * 1}rem`;
+
+                            const subIconElement = document.createElement('i');
+                            subIconElement.className = `fas fa-arrow-right mr-2 text-xs`;
+                            subNavItemDiv.appendChild(subIconElement);
+
+                            const subTextSpan = document.createElement('span');
+                            subTextSpan.textContent = subItemKey.replace(/_/g, ' ');
+                            subNavItemDiv.appendChild(subTextSpan);
+
+                            if (subItemKey === "Gastropoda" && fullPathSegment.includes("Mollusca")) {
+                                const newLabelSpan = document.createElement('span');
+                                newLabelSpan.className = 'new-label';
+                                newLabelSpan.textContent = 'NEW';
+                                subNavItemDiv.appendChild(newLabelSpan);
+                            }
+
+                            subNavItemDiv.dataset.category = subItemKey;
+
+                            subNavItemDiv.addEventListener('click', () => {
+                                const categoryToFilter = subNavItemDiv.dataset.category;
+                                window.location.href = `index.html?category=${encodeURIComponent(categoryToFilter)}`;
+                            });
+                            subLi.appendChild(subNavItemDiv);
+                            ul.appendChild(subLi);
+                        });
+                    }
+                });
+                parentElement.appendChild(ul);
+            }
+
+            /* Fungsi untuk memperbarui item taksonomi yang aktif di sidebar */
+            function updateActiveTaxonomy(speciesDetail) {
+                const allNavItems = document.querySelectorAll('#taxonomy-nav .nav-item');
+                allNavItems.forEach(item => item.classList.remove('active'));
+
+                let activatedElement = null;
+                const fullTaxonomyRoot = taxonomyData["Semua Invertebrata"];
+
+                let speciesCategoryPath = null;
+
+                // Priority 1: Search for 'kelas'
+                if (speciesDetail.kelas) {
+                    speciesCategoryPath = findCategoryPath(fullTaxonomyRoot, speciesDetail.kelas);
+                }
+
+                // Priority 2: If 'kelas' not found or not applicable, search for 'subFilum'
+                if (!speciesCategoryPath && speciesDetail.subFilum) {
+                    speciesCategoryPath = findCategoryPath(fullTaxonomyRoot, speciesDetail.subFilum);
+                }
+
+                // Priority 3: If 'subFilum' not found or not applicable, search for 'filum'
+                if (!speciesCategoryPath && speciesDetail.filum) {
+                    speciesCategoryPath = findCategoryPath(fullTaxonomyRoot, speciesDetail.filum);
+                }
+
+                /* If a category path is found, try to activate all elements in the path */
+                if (speciesCategoryPath && speciesCategoryPath.length > 0) {
+                    for (let i = 0; i < speciesCategoryPath.length; i++) {
+                        const currentPathSegment = speciesCategoryPath[i];
+                        const elementToActivate = document.querySelector(`[data-category="${currentPathSegment}"]`);
+                        if (elementToActivate) {
+                            elementToActivate.classList.add('active');
+                            activatedElement = elementToActivate; /* Keep track of the last activated (most specific) */
+                        }
+                    }
+                }
+
+                /* If no specific category or filum was activated, default to "Semua Invertebrata" */
+                if (!activatedElement) {
+                    const allInvertebrataHeader = document.querySelector('.nav-item[data-category="Semua Invertebrata"]');
+                    if (allInvertebrataHeader) {
+                        activatedElement = allInvertebrataHeader;
+                        allInvertebrataHeader.classList.add('active');
+                    }
+                }
+
+                if (activatedElement) {
+                    activatedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+
+
+            /* Fungsi untuk memperbarui breadcrumbs dinamis */
+            function updateBreadcrumbs(speciesFilum, speciesSubFilum, speciesKelas, speciesScientificName) {
+                const breadcrumbsUl = document.getElementById('dynamic-breadcrumbs');
+                breadcrumbsUl.innerHTML = '';
+
+                /* Mulai dengan "Semua Invertebrata" link */
+                let linkRoot = document.createElement('li');
+                let aRoot = document.createElement('a');
+                aRoot.href = `index.html?category=${encodeURIComponent("Semua Invertebrata")}`;
+                aRoot.className = 'hover:underline text-gray-600';
+                aRoot.textContent = "Semua Invertebrata";
+                linkRoot.appendChild(aRoot);
+                breadcrumbsUl.appendChild(linkRoot);
+
+                /* Build path components for breadcrumbs based on hierarchy */
+                const fullTaxonomyTree = taxonomyData["Semua Invertebrata"];
+                let currentPath = ["Semua Invertebrata"]; // Start from the root for path building
+
+                // Add Filum
+                if (speciesFilum && fullTaxonomyTree[speciesFilum]) {
+                    currentPath.push(speciesFilum);
+                }
+
+                // Add SubFilum (if applicable, e.g., for Arthropoda)
+                if (speciesFilum === "Arthropoda" && speciesSubFilum && typeof fullTaxonomyTree[speciesFilum] === 'object' && !Array.isArray(fullTaxonomyTree[speciesFilum]) && fullTaxonomyTree[speciesFilum][speciesSubFilum]) {
+                    currentPath.push(speciesSubFilum);
+                }
+
+                // Add Kelas
+                if (speciesKelas) {
+                    // Check if 'kelas' is directly under 'filum' or 'subFilum'
+                    let foundKelasInPath = false;
+                    let currentLevelData = fullTaxonomyTree;
+                    let tempPath = ["Semua Invertebrata"]; // Temporary path to traverse the taxonomy tree
+
+                    // Traverse to the correct level in the taxonomy tree based on currentPath
+                    for (let i = 1; i < currentPath.length; i++) {
+                        if (typeof currentLevelData === 'object' && currentLevelData !== null) {
+                            currentLevelData = currentLevelData[currentPath[i]];
+                            tempPath.push(currentPath[i]);
+                        } else {
+                            break; // Stop if path is invalid
+                        }
+                    }
+
+                    if (typeof currentLevelData === 'object' && currentLevelData !== null) {
+                        if (Array.isArray(currentLevelData) && currentLevelData.includes(speciesKelas)) {
+                            currentPath.push(speciesKelas);
+                            foundKelasInPath = true;
+                        } else if (typeof currentLevelData === 'object' && !Array.isArray(currentLevelData) && currentLevelData[speciesKelas]) {
+                            currentPath.push(speciesKelas);
+                            foundKelasInPath = true;
+                        }
+                    }
+                }
+
+                /* Iterate through the determined path components (excluding the initial "Semua Invertebrata" for linking) */
+                for (let i = 1; i < currentPath.length; i++) { // Start from index 1 to skip "Semua Invertebrata"
+                    const part = currentPath[i];
+                    let li = document.createElement('li');
+                    let a = document.createElement('a');
+                    a.href = `index.html?category=${encodeURIComponent(part)}`;
+                    a.className = 'hover:underline text-gray-600';
+                    a.textContent = part.replace(/_/g, ' ');
+                    li.appendChild(a);
+                    breadcrumbsUl.appendChild(li);
+                }
+
+                /* Add current species scientific name (as text, not link) */
+                let currentSpeciesLi = document.createElement('li');
+                let currentSpeciesSpan = document.createElement('span');
+                currentSpeciesSpan.className = 'text-gray-900 font-medium';
+                currentSpeciesSpan.textContent = speciesScientificName;
+                currentSpeciesLi.appendChild(currentSpeciesSpan);
+                breadcrumbsUl.appendChild(currentSpeciesLi);
+            }
+
+
+            /* --- Logika Komentar & Balasan --- */
+            const commentsList = document.getElementById('commentsList');
+            const mainCommentTextarea = document.getElementById('mainCommentTextarea');
+            const kirimKomentarBtn = document.getElementById('kirimKomentarBtn');
+            const commentCountHeader = document.getElementById('commentCountHeader');
+            const notificationMessage = document.getElementById('notificationMessage');
+
+            let initialCommentsData = [
+                {
+                    id: 'comment-1',
+                    author: "davitputra@gmail.com",
+                    date: "1 Juli 2025",
+                    text: "Spesies yang menarik! Saya pernah menemukannya di danau dekat rumah.",
+                    replies: [
+                        {
+                            id: 'reply-1-1',
+                            author: "admin@gmail.com",
+                            date: "1 Juli 2025",
+                            text: "Terima kasih atas informasinya, Davit! Apakah Anda punya foto-foto dari penemuan tersebut?",
+                            replies: [
+                                {
+                                    id: 'reply-1-1-1',
+                                    author: "anonymous@gmail.com",
+                                    date: "2 Juli 2025",
+                                    text: "Saya juga menemukan yang serupa di daerah X. Sangat menarik!"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'comment-2',
+                    author: "anonymous@gmail.com",
+                    date: "28 Juli 2025",
+                    text: "Gambar-gambar yang disajikan sangat jelas!"
+                }
+            ];
+
+            const currentUserEmail = "pengguna_baru@gmail.com";
+
+            function showNotification(message, type = 'success') {
+                notificationMessage.textContent = message;
+                notificationMessage.className = ``;
+                notificationMessage.classList.add('show', type);
+
+                setTimeout(() => {
+                    notificationMessage.classList.remove('show');
+                }, 3000);
+            }
+
+            function updateCommentCount() {
+                let count = 0;
+                function countComments(comments) {
+                    comments.forEach(comment => {
+                        count++;
+                        if (comment.replies && comment.replies.length > 0) {
+                            countComments(comment.replies);
+                        }
+                    });
+                }
+                countComments(initialCommentsData);
+                commentCountHeader.textContent = `Komentar (${count})`;
+            }
+
+            function createCommentElement(commentData, isNested = false) {
+                const commentItemDiv = document.createElement('div');
+                commentItemDiv.className = 'comment-item';
+                if (isNested) {
+                    commentItemDiv.classList.add('nested-comment');
+                }
+                commentItemDiv.dataset.commentId = commentData.id;
+
+                const emailParts = commentData.author.split('@');
+                const username = emailParts[0];
+                const authorInitials = username.substring(0, 2).toUpperCase();
+
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'comment-avatar';
+                avatarDiv.textContent = authorInitials;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'comment-content';
+
+                const headerP = document.createElement('p');
+                headerP.className = 'comment-header';
+                headerP.innerHTML = `${commentData.author} <span class="comment-meta">- ${commentData.date}</span>`;
+
+                const bodyP = document.createElement('p');
+                bodyP.className = 'comment-body';
+                bodyP.textContent = commentData.text;
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'comment-actions';
+                const replyBtn = document.createElement('button');
+                replyBtn.className = 'reply-btn';
+                replyBtn.textContent = 'Balas';
+                actionsDiv.appendChild(replyBtn);
+
+                const repliesContainer = document.createElement('div');
+                repliesContainer.className = 'replies-container';
+
+                contentDiv.appendChild(headerP);
+                contentDiv.appendChild(bodyP);
+                contentDiv.appendChild(actionsDiv);
+                contentDiv.appendChild(repliesContainer);
+
+                commentItemDiv.appendChild(avatarDiv);
+                commentItemDiv.appendChild(contentDiv);
+
+                const currentReplyUserEmail = "pengguna_balas@gmail.com";
+                if (commentData.author === currentUserEmail || commentData.author === currentReplyUserEmail) {
+                    const trashIcon = document.createElement('i');
+                    trashIcon.className = 'fas fa-trash trash-icon';
+                    trashIcon.dataset.commentId = commentData.id;
+                    commentItemDiv.appendChild(trashIcon);
+                }
+
+                if (commentData.replies && commentData.replies.length > 0) {
+                    commentData.replies.forEach(reply => {
+                        repliesContainer.appendChild(createCommentElement(reply, true));
+                    });
+                }
+
+                return commentItemDiv;
+            }
+
+            function deleteCommentById(comments, commentIdToDelete) {
+                for (let i = 0; i < comments.length; i++) {
+                    if (comments[i].id === commentIdToDelete) {
+                        comments.splice(i, 1);
+                        return true;
+                    }
+                    if (comments[i].replies && comments[i].replies.length > 0) {
+                        if (deleteCommentById(comments[i].replies, commentIdToDelete)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function renderAllComments() {
+                commentsList.innerHTML = '';
+                initialCommentsData.forEach(comment => {
+                    commentsList.appendChild(createCommentElement(comment));
+                });
+                updateCommentCount();
+            }
+
+            kirimKomentarBtn.addEventListener('click', () => {
+                const commentText = mainCommentTextarea.value.trim();
+                if (commentText) {
+                    const newComment = {
+                        id: `comment-${Date.now()}`,
+                        author: currentUserEmail,
+                        date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+                        text: commentText,
+                        replies: []
+                    };
+                    initialCommentsData.unshift(newComment);
+                    renderAllComments();
+                    mainCommentTextarea.value = '';
+                    showNotification('Komentar berhasil ditambahkan!', 'success');
+                } else {
+                    showNotification('Komentar tidak boleh kosong!', 'error');
+                }
+            });
+
+            commentsList.addEventListener('click', (event) => {
+                if (event.target.classList.contains('reply-btn')) {
+                    const replyButton = event.target;
+                    const commentContentDiv = replyButton.closest('.comment-content');
+
+                    const existingReplyForm = commentContentDiv.querySelector('.reply-form');
+                    if (existingReplyForm) {
+                        existingReplyForm.remove();
+                        return;
+                    }
+
+                    const replyFormDiv = document.createElement('div');
+                    replyFormDiv.className = 'reply-form mt-2 p-2 bg-gray-100 rounded-lg';
+
+                    const replyTextarea = document.createElement('textarea');
+                    replyTextarea.className = 'block w-full border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200 focus:border-blue-500 text-sm mb-2';
+                    replyTextarea.placeholder = 'Tulis balasan Anda...';
+
+                    const buttonGroup = document.createElement('div');
+                    buttonGroup.className = 'flex justify-end space-x-2';
+
+                    const replyCancelBtn = document.createElement('button');
+                    replyCancelBtn.className = 'btn btn-cancel px-3 py-1 text-sm';
+                    replyCancelBtn.textContent = 'Batal';
+                    replyCancelBtn.addEventListener('click', () => {
+                        replyFormDiv.remove();
+                    });
+
+                    const replySendBtn = document.createElement('button');
+                    replySendBtn.className = 'btn btn-primary px-3 py-1 text-sm';
+                    replySendBtn.textContent = 'Kirim Balasan';
+
+                    buttonGroup.appendChild(replyCancelBtn);
+                    buttonGroup.appendChild(replySendBtn);
+
+                    replyFormDiv.appendChild(replyTextarea);
+                    replyFormDiv.appendChild(buttonGroup);
+
+                    replyButton.parentNode.insertBefore(replyFormDiv, replyButton.nextSibling);
+
+                    replySendBtn.addEventListener('click', () => {
+                        const replyText = replyTextarea.value.trim();
+                        if (replyText) {
+                            const newReply = {
+                                id: `reply-${Date.now()}`,
+                                author: "pengguna_balas@gmail.com",
+                                date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+                                text: replyText
+                            };
+
+                            function findCommentAndAddReply(comments, targetId, replyData) {
+                                for (const comment of comments) {
+                                    if (comment.id === targetId) {
+                                        if (!comment.replies) {
+                                            comment.replies = [];
+                                        }
+                                        comment.replies.push(replyData);
+                                        return true;
+                                    }
+                                    if (comment.replies && comment.replies.length > 0) {
+                                        if (findCommentAndAddReply(comment.replies, targetId, replyData)) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            }
+
+                            const parentCommentItem = replyButton.closest('.comment-item');
+                            const parentCommentId = parentCommentItem.dataset.commentId;
+                            findCommentAndAddReply(initialCommentsData, parentCommentId, newReply);
+
+                            renderAllComments();
+                            replyFormDiv.remove();
+                            showNotification('Balasan berhasil ditambahkan!', 'success');
+                        } else {
+                            showNotification('Balasan tidak boleh kosong!', 'error');
+                        }
+                    });
+                }
+
+                if (event.target.classList.contains('trash-icon')) {
+                    const commentIdToDelete = event.target.dataset.commentId;
+                    if (deleteCommentById(initialCommentsData, commentIdToDelete)) {
+                        renderAllComments();
+                        showNotification('Komentar berhasil dihapus!', 'success');
+                    } else {
+                        showNotification('Komentar tidak ditemukan atau tidak dapat dihapus.', 'error');
+                    }
+                }
+            });
+
+            /* Fungsi untuk merender detail spesies */
+            function renderSpeciesDetail(speciesDetail) {
+                if (!speciesDetail) {
+                    document.getElementById('speciesCommonName').textContent = "Spesies Tidak Ditemukan";
+                    document.getElementById('speciesScientificName').textContent = "";
+                    document.title = "Spesies Tidak Ditemukan";
+                    document.querySelector('.main-content').innerHTML = '<p class="text-center text-red-500">Maaf, detail spesies yang Anda cari tidak ditemukan.</p>';
+                    return;
+                }
+
+                /* Perbarui Header */
+                const speciesCommonNameElement = document.getElementById('speciesCommonName');
+                speciesCommonNameElement.innerHTML = `${speciesDetail.name} <span id="conservationStatus"
+                                    class="bg-gray-800 bg-opacity-70 text-white text-sm font-normal px-2 py-1 rounded-full whitespace-nowrap"></span>`;
+                document.getElementById('speciesScientificName').textContent = speciesDetail.scientificName;
+                document.getElementById('conservationStatus').textContent = speciesDetail.conservationStatus || 'N/A';
+                document.title = `Detail Spesies - ${speciesDetail.scientificName}`;
+
+                /* Perbarui Galeri */
+                currentSpeciesImages = speciesDetail.images;
+                renderThumbnails(currentSpeciesImages);
+
+                /* Perbarui Konten Tab */
+                document.getElementById('deskripsiContent').innerHTML = speciesDetail.description;
+                document.getElementById('habitatContent').innerHTML = speciesDetail.habitat;
+                document.getElementById('ekologiContent').innerHTML = speciesDetail.ecologyRole;
+
+                /* Perbarui Tabel Klasifikasi */
+                const klasifikasiTableBody = document.getElementById('klasifikasiTableBody');
+                klasifikasiTableBody.innerHTML = ''; // Bersihkan konten sebelumnya
+
+                // Selalu tambahkan baris untuk Filum, Sub Filum, dan Kelas. Gunakan '-' jika data tidak ada.
+                klasifikasiTableBody.innerHTML += `
+                    <tr>
+                        <td class="py-2 px-4">Filum</td>
+                        <td class="py-2 px-4">${speciesDetail.filum || '-'}</td>
+                    </tr>
+                `;
+                klasifikasiTableBody.innerHTML += `
+                    <tr>
+                        <td class="py-2 px-4">Sub Filum</td>
+                        <td class="py-2 px-4">${speciesDetail.subFilum || '-'}</td>
+                    </tr>
+                `;
+                klasifikasiTableBody.innerHTML += `
+                    <tr>
+                        <td class="py-2 px-4">Kelas</td>
+                        <td class="py-2 px-4">${speciesDetail.kelas || '-'}</td>
+                    </tr>
+                `;
+
+
+                /* --- PETA PERSEBARAN BARU DENGAN LEAFLET --- */
+                const speciesMapContainer = document.getElementById('speciesMapContainer');
+                const mapFilterButtonsContainer = document.getElementById('mapFilterButtons');
+                let speciesMap = null; /* Variabel untuk menyimpan instance peta */
+
+                function initializeSpeciesMap() {
+                    /* Hanya inisialisasi jika belum ada */
+                    if (speciesMap === null) {
+                        speciesMap = L.map('speciesMapContainer').setView([3.4333, 117.6500], 9); /* Fokus ke Kalimantan Utara */
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            maxZoom: 19,
+                            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        }).addTo(speciesMap);
+                    }
+                    return speciesMap;
+                }
+
+                const allRegionsLayer = L.featureGroup(); /* Untuk batas Kaltara */
+                const speciesGeoJSONLayer = L.featureGroup(); /* Untuk GeoJSON spesies */
+
+                /* Muat batas GeoJSON Kaltara (dari referensi tambahPeta.html) */
+                const geojsonFiles = [
+                    'data/geojson/65.01_Bulungan.geojson',
+                    'data/geojson/65.02_Malinau.geojson',
+                    'data/geojson/65.03_Nunukan.geojson',
+                    'data/geojson/65.04_Tana_Tidung.geojson',
+                    'data/geojson/65.71_Kota_Tarakan.geojson'
+                ];
+
+                geojsonFiles.forEach(file => {
+                    fetch(file)
+                        .then(res => {
+                            if (!res.ok) {
+                                throw new Error(`HTTP error! status: ${res.status}`);
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+                            L.geoJSON(data, {
+                                style: {
+                                    color: '#28a745', /* Warna garis hijau */
+                                    weight: 2, /* Ketebalan garis */
+                                    fillColor: '#7CFC00', /* Warna isi hijau muda */
+                                    fillOpacity: 0.3
+                                }
+                            }).addTo(allRegionsLayer);
+                        })
+                        .catch(error => console.error(`Error loading Kaltara GeoJSON file ${file}:`, error));
+                });
+
+
+                function renderSpeciesMap(mapDataArray = []) {
+                    const currentMapInstance = initializeSpeciesMap();
+                    speciesGeoJSONLayer.clearLayers(); /* Bersihkan lapisan GeoJSON spesies sebelumnya */
+
+                    currentMapInstance.addLayer(allRegionsLayer); /* Pastikan batas Kaltara selalu ada */
+                    let bounds = new L.LatLngBounds([]); /* Untuk menyesuaikan zoom peta */
+
+                    /* Tambahkan batas Kaltara ke bounds jika sudah ada layer di allRegionsLayer */
+                    if (allRegionsLayer.getLayers().length > 0) {
+                        bounds.extend(allRegionsLayer.getBounds());
+                    } else {
+                        /* Fallback jika GeoJSON Kaltara belum dimuat, set ke pusat Kaltara */
+                        currentMapInstance.setView([3.4333, 117.6500], 9);
+                    }
+
+                    if (mapDataArray.length === 0) {
+                        mapFilterButtonsContainer.innerHTML = '<p class="text-gray-500 text-center">Tidak ada peta persebaran untuk spesies ini.</p>';
+                        if (bounds.isValid()) currentMapInstance.fitBounds(bounds, { padding: [50, 50] });
+                        currentMapInstance.invalidateSize();
+                        return;
+                    }
+
+                    mapDataArray.forEach(mapGeoJSON => {
+                        if (mapGeoJSON && typeof mapGeoJSON === 'object' && mapGeoJSON.type) {
+                            const layer = L.geoJSON(mapGeoJSON, {
+                                style: {
+                                    color: '#007bff', /* Warna garis GeoJSON spesies */
+                                    weight: 3,
+                                    fillColor: '#007bff',
+                                    fillOpacity: 0.5
+                                },
+                            }).addTo(speciesGeoJSONLayer);
+
+                            if (layer.getBounds().isValid()) {
+                                bounds.extend(layer.getBounds());
+                            } else if (layer.getLatLng) {
+                                bounds.extend(layer.getLatLng());
+                            }
+                        }
+                    });
+
+                    currentMapInstance.addLayer(speciesGeoJSONLayer); /* Tambahkan lapisan GeoJSON spesies */
+
+                    if (bounds.isValid()) {
+                        currentMapInstance.fitBounds(bounds, { padding: [50, 50] });
+                    } else {
+                        currentMapInstance.setView([3.4333, 117.6500], 9);
+                    }
+                    currentMapInstance.invalidateSize();
+                }
+
+                /* Render tombol filter peta */
+                const mapCollections = speciesDetail.peta_persebaran || [];
+                mapFilterButtonsContainer.innerHTML = ''; /* Bersihkan tombol sebelumnya */
+
+                if (mapCollections.length > 0) {
+                    /* Tombol "Lihat Semua Peta" */
+                    const allMapsButton = document.createElement('button');
+                    allMapsButton.textContent = 'Lihat Semua Peta';
+                    allMapsButton.classList.add('active'); /* Aktifkan secara default */
+                    allMapsButton.addEventListener('click', () => {
+                        document.querySelectorAll('#mapFilterButtons button').forEach(btn => btn.classList.remove('active'));
+                        allMapsButton.classList.add('active');
+                        renderSpeciesMap(mapCollections);
+                    });
+                    mapFilterButtonsContainer.appendChild(allMapsButton);
+
+                    /* Tombol untuk setiap peta individual */
+                    mapCollections.forEach((mapGeoJSON, index) => {
+                        const singleMapButton = document.createElement('button');
+                        singleMapButton.textContent = `Peta ${index + 1}`;
+                        singleMapButton.addEventListener('click', () => {
+                            document.querySelectorAll('#mapFilterButtons button').forEach(btn => btn.classList.remove('active'));
+                            singleMapButton.classList.add('active');
+                            renderSpeciesMap([mapGeoJSON]);
+                        });
+                        mapFilterButtonsContainer.appendChild(singleMapButton);
+                    });
+                } else {
+                    mapFilterButtonsContainer.innerHTML = '<p class="text-gray-500">Tidak ada peta persebaran yang tersedia.</p>';
+                }
+
+
+                /* Perbarui Tabel Sumber Data */
+                const sumberDataTableBody = document.getElementById('sumberDataTableBody');
+                sumberDataTableBody.innerHTML = `
+                    <tr>
+                        <td class="py-2 px-4">Peneliti</td>
+                        <td class="py-2 px-4">${speciesDetail.researcher || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-4">Metode Penelitian</td>
+                        <td class="py-2 px-4">${speciesDetail.researchMethod || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-4">Tanggal Penelitian</td>
+                        <td class="py-2 px-4">${speciesDetail.researchDate || '-'}</td>
+                    </tr>
+                    <tr>
+                        <td class="py-2 px-4">Lokasi Penelitian</td>
+                        <td class="py-2 px-4">${Array.isArray(speciesDetail.researchLocation) ? speciesDetail.researchLocation.join(', ') : (speciesDetail.researchLocation || '-')}</td>
+                    </tr>
+                `;
+
+                /* Render Sidebar Taksonomi */
+                const sidebarNavRoot = document.getElementById('taxonomy-nav');
+                sidebarNavRoot.innerHTML = ''; /* Bersihkan konten sebelumnya */
+
+                /* Tambahkan tombol/header khusus "Semua Invertebrata" */
+                const allInvertebrataDiv = document.createElement('div');
+                allInvertebrataDiv.className = `nav-item cursor-pointer text-sm py-1 px-3 rounded-lg font-bold text-white mb-2`;
+                allInvertebrataDiv.innerHTML = `<i class="fas fa-globe mr-2"></i> <span>Semua Invertebrata</span>`;
+                allInvertebrataDiv.dataset.category = "Semua Invertebrata";
+                allInvertebrataDiv.addEventListener('click', () => {
+                    window.location.href = `index.html?category=${encodeURIComponent("Semua Invertebrata")}`;
+                });
+                sidebarNavRoot.appendChild(allInvertebrataDiv);
+
+                /* Render daftar taksonomi utama */
+                renderTaxonomy(taxonomyData["Semua Invertebrata"], sidebarNavRoot, 0, ["Semua Invertebrata"]);
+
+                /* Aktifkan item sidebar dan perbarui breadcrumbs secara dinamis berdasarkan spesies saat ini */
+                updateActiveTaxonomy(speciesDetail);
+                updateBreadcrumbs(speciesDetail.filum, speciesDetail.subFilum, speciesDetail.kelas, speciesDetail.scientificName);
+
+
+                /* Render peta saat tab "Peta Persebaran" diaktifkan */
+                document.querySelectorAll('.species-tabs button').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        openTab(event, event.target.getAttribute('onclick').split("'")[1]);
+
+                        if (event.currentTarget.textContent.includes('Peta Persebaran')) {
+                            setTimeout(() => {
+                                renderSpeciesMap(speciesDetail.peta_persebaran);
+                            }, 100);
+                        } else {
+                            if (speciesMap) {
+                                speciesGeoJSONLayer.clearLayers();
+                            }
+                        }
+                    });
+                });
+            }
+
+
+            /* --- Muat Awal Detail Spesies dan Sidebar --- */
+            document.addEventListener('DOMContentLoaded', () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const speciesId = parseInt(urlParams.get('id'));
+
+                let speciesDetail = null;
+                if (speciesId) {
+                    speciesDetail = allSpeciesDetails.find(s => s.id === speciesId);
+                }
+
+                renderSpeciesDetail(speciesDetail); // Panggil fungsi render detail spesies
+
+                renderAllComments();
+                document.querySelector('.species-tabs button').click(); // Aktifkan tab pertama secara default
+            });
+
+            /* Mendapatkan referensi elemen searchInput dan searchIcon */
+            const searchInput = document.getElementById('searchInput');
+            const searchIcon = document.getElementById('searchIcon');
+
+            /* Fungsi untuk melakukan pencarian global dan mengarahkan ke index.html */
+            function performGlobalSearchFromDetail() {
+                const query = searchInput.value.trim();
+                if (query) {
+                    sessionStorage.setItem('globalSearchQuery', query);
+                    window.location.href = 'index.html';
+                }
+            }
+
+            /* Event listener untuk tombol Enter pada input pencarian */
+            searchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    performGlobalSearchFromDetail();
+                }
+            });
+
+            /* Event listener untuk klik ikon pencarian */
+            searchIcon.addEventListener('click', function () {
+                performGlobalSearchFromDetail();
+            });
+        </script>
+
+</body>
+
+</html>
