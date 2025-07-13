@@ -502,7 +502,8 @@
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             font-weight: 500;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            /* Add color and border-color to transition */
             cursor: pointer;
             border: 1px solid #cbd5e0;
         }
@@ -511,10 +512,13 @@
             background-color: #cbd5e0;
         }
 
+        /* Updated active button style to orange */
         .map-filter-buttons button.active {
-            background-color: #1a4a2a;
+            background-color: #F97A00;
+            /* Orange color */
             color: white;
-            border-color: #1a4a2a;
+            border-color: #F97A00;
+            /* Match border color */
         }
 
         .comments-section h2 {
@@ -756,7 +760,6 @@
                 overflow: hidden;
             }
 
-            /* Dim and disable main content when sidebar is open */
             body.sidebar-open .main-content-area-wrapper {
                 pointer-events: none;
                 filter: blur(2px) grayscale(50%);
@@ -930,6 +933,7 @@
             }
 
             .trash-icon {
+                position: absolute;
                 top: 0.6rem;
                 /* Adjusted from 0.75 to 0.6 */
                 right: 0.6rem;
@@ -1188,6 +1192,8 @@
         <div class="overlay" id="sidebarOverlay"></div>
 
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/leaflet-area@0.1.0/leaflet-area.min.js"></script>
+
 
         <script>
             // Data taksonomi untuk navigasi sidebar - DISEMPURNAKAN AGAR SAMA DENGAN INDEX.HTML
@@ -1243,7 +1249,7 @@
                     peta_persebaran: [ // Contoh data GeoJSON untuk Bekicot
                         {
                             "type": "Feature",
-                            "properties": { "name": "Bekicot Spot A" },
+                            "properties": { "name": "Bekicot Spot A", "area_km2": 25.12 }, // Data luas area dummy
                             "geometry": {
                                 "type": "Polygon",
                                 "coordinates": [[
@@ -1257,16 +1263,16 @@
                         },
                         {
                             "type": "Feature",
-                            "properties": { "name": "Bekicot Spot B (Tidung Pale)" }, // Nama diubah untuk kejelasan
+                            "properties": { "name": "Bekicot Spot B (Tidung Pale)", "area_km2": 15.82353 }, // Data luas area dummy
                             "geometry": {
                                 // Mengubah Point menjadi Polygon kecil di sekitar Tidung Pale
                                 "type": "Polygon",
                                 "coordinates": [[
-                                    [117.14, 2.91],
-                                    [117.16, 2.91],
-                                    [117.16, 2.89],
-                                    [117.14, 2.89],
-                                    [117.14, 2.91]
+                                    [117.13, 2.92], // Sedikit diperluas
+                                    [117.17, 2.92], // Sedikit diperluas
+                                    [117.17, 2.88], // Sedikit diperluas
+                                    [117.13, 2.88], // Sedikit diperluas
+                                    [117.13, 2.92]
                                 ]]
                             }
                         }
@@ -1699,11 +1705,11 @@
                 }
             ];
 
-            const currentUserEmail = "pengguna_baru@gmail.com";
+            const currentUserEmail = "pengguna_baru@gmail.com"; // Simulating a logged-in user
 
             function showNotification(message, type = 'success') {
                 notificationMessage.textContent = message;
-                notificationMessage.className = ``;
+                notificationMessage.className = ``; // Clear existing classes
                 notificationMessage.classList.add('show', type);
 
                 setTimeout(() => {
@@ -1770,8 +1776,8 @@
                 commentItemDiv.appendChild(avatarDiv);
                 commentItemDiv.appendChild(contentDiv);
 
-                const currentReplyUserEmail = "pengguna_balas@gmail.com";
-                if (commentData.author === currentUserEmail || commentData.author === currentReplyUserEmail) {
+                // Show trash icon only if the current user is the author
+                if (commentData.author === currentUserEmail) {
                     const trashIcon = document.createElement('i');
                     trashIcon.className = 'fas fa-trash trash-icon';
                     trashIcon.dataset.commentId = commentData.id;
@@ -1874,7 +1880,7 @@
                         if (replyText) {
                             const newReply = {
                                 id: `reply-${Date.now()}`,
-                                author: "pengguna_balas@gmail.com",
+                                author: currentUserEmail, // Use currentUserEmail for replies as well
                                 date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
                                 text: replyText
                             };
@@ -1990,8 +1996,9 @@
                     return speciesMap;
                 }
 
-                const allRegionsLayer = L.featureGroup(); /* Untuk batas Kaltara */
-                const speciesGeoJSONLayer = L.featureGroup(); /* Untuk GeoJSON spesies */
+                // allRegionsLayer and speciesGeoJSONLayer moved outside to be accessible globally
+                const allRegionsLayer = L.featureGroup();
+                const speciesGeoJSONLayer = L.featureGroup();
 
                 /* Muat batas GeoJSON Kaltara (dari referensi tambahPeta.html) */
                 const geojsonFiles = [
@@ -2023,87 +2030,181 @@
                         .catch(error => console.error(`Error loading Kaltara GeoJSON file ${file}:`, error));
                 });
 
+                // currentActiveMapState: -1 for "Lihat Semua Peta", or individual map index (0, 1, 2...)
+                let currentActiveMapState = -1; // Default to "Lihat Semua Peta"
 
-                function renderSpeciesMap(mapDataArray = []) {
+                function renderSpeciesMap(mapDataArrayToRender = [], activeIndex = -1) {
                     const currentMapInstance = initializeSpeciesMap();
-                    speciesGeoJSONLayer.clearLayers(); /* Bersihkan lapisan GeoJSON spesies sebelumnya */
+                    speciesGeoJSONLayer.clearLayers(); /* Clear previous species GeoJSON layer */
 
-                    currentMapInstance.addLayer(allRegionsLayer); /* Pastikan batas Kaltara selalu ada */
-                    let bounds = new L.LatLngBounds([]); /* Untuk menyesuaikan zoom peta */
-
-                    /* Tambahkan batas Kaltara ke bounds jika sudah ada layer di allRegionsLayer */
-                    if (allRegionsLayer.getLayers().length > 0) {
-                        bounds.extend(allRegionsLayer.getBounds());
-                    } else {
-                        /* Fallback jika GeoJSON Kaltara belum dimuat, set ke pusat Kaltara */
-                        currentMapInstance.setView([3.4333, 117.6500], 9);
+                    // Ensure allRegionsLayer is always on the map
+                    if (!currentMapInstance.hasLayer(allRegionsLayer)) {
+                        currentMapInstance.addLayer(allRegionsLayer);
                     }
 
-                    if (mapDataArray.length === 0) {
-                        mapFilterButtonsContainer.innerHTML = '<p class="text-gray-500 text-center">Tidak ada peta persebaran untuk spesies ini.</p>';
-                        if (bounds.isValid()) currentMapInstance.fitBounds(bounds, { padding: [50, 50] });
-                        currentMapInstance.invalidateSize();
-                        return;
-                    }
+                    let boundsToFit = new L.LatLngBounds([]); /* To adjust map zoom */
 
-                    mapDataArray.forEach(mapGeoJSON => {
+                    // Collect bounds from the data to be rendered (mapDataArrayToRender)
+                    mapDataArrayToRender.forEach(mapGeoJSON => {
                         if (mapGeoJSON && typeof mapGeoJSON === 'object' && mapGeoJSON.type) {
-                            const layer = L.geoJSON(mapGeoJSON, {
-                                style: {
-                                    color: '#007bff', /* Warna garis GeoJSON spesies */
-                                    weight: 3,
-                                    fillColor: '#007bff',
-                                    fillOpacity: 0.5
-                                },
-                            }).addTo(speciesGeoJSONLayer);
-
-                            if (layer.getBounds().isValid()) {
-                                bounds.extend(layer.getBounds());
-                            } else if (layer.getLatLng) {
-                                bounds.extend(layer.getLatLng());
+                            const tempLayer = L.geoJSON(mapGeoJSON);
+                            if (tempLayer.getBounds().isValid()) {
+                                boundsToFit.extend(tempLayer.getBounds());
+                            } else if (mapGeoJSON.geometry.type === "Point" && mapGeoJSON.geometry.coordinates) {
+                                // For points, create a LatLng and extend bounds with it
+                                const latLng = L.latLng(mapGeoJSON.geometry.coordinates[1], mapGeoJSON.geometry.coordinates[0]);
+                                boundsToFit.extend(latLng);
                             }
                         }
                     });
 
-                    currentMapInstance.addLayer(speciesGeoJSONLayer); /* Tambahkan lapisan GeoJSON spesies */
+                    // Zoom logic:
+                    // If switching between individual maps (not to/from "Lihat Semua Peta")
+                    // AND boundsToFit is valid, fit to boundsToFit directly.
+                    // If to/from "Lihat Semua Peta", or if no data at all, include Kaltara bounds in the overall bounds.
+                    const isSwitchingIndividualMaps = (activeIndex !== -1 && currentActiveMapState !== -1);
 
-                    if (bounds.isValid()) {
-                        currentMapInstance.fitBounds(bounds, { padding: [50, 50] });
+                    if (boundsToFit.isValid()) {
+                        if (isSwitchingIndividualMaps) {
+                            currentMapInstance.flyToBounds(boundsToFit, { padding: [50, 50], duration: 0.5 }); // Smooth transition without zooming out
+                        } else {
+                            // Include Kaltara bounds for zooming out/in to the entire region
+                            let combinedBounds = boundsToFit;
+                            if (allRegionsLayer.getLayers().length > 0) {
+                                allRegionsLayer.eachLayer(function (layer) {
+                                    if (layer.getBounds && layer.getBounds().isValid()) {
+                                        combinedBounds.extend(layer.getBounds());
+                                    }
+                                });
+                            }
+                            if (combinedBounds.isValid()) {
+                                currentMapInstance.flyToBounds(combinedBounds, { padding: [50, 50], duration: 0.5 });
+                            } else {
+                                currentMapInstance.setView([3.4333, 117.6500], 9); // Fallback to default Kaltara view
+                            }
+                        }
                     } else {
-                        currentMapInstance.setView([3.4333, 117.6500], 9);
+                        // Fallback if no valid bounds (e.g., only points, or no data)
+                        if (allRegionsLayer.getLayers().length > 0) {
+                            allRegionsLayer.eachLayer(function (layer) {
+                                if (layer.getBounds && layer.getBounds().isValid()) {
+                                    boundsToFit.extend(layer.getBounds());
+                                }
+                            });
+                        }
+                        if (boundsToFit.isValid()) currentMapInstance.fitBounds(boundsToFit, { padding: [50, 50] });
+                        else currentMapInstance.setView([3.4333, 117.6500], 9); // Fallback to default Kaltara view
                     }
-                    currentMapInstance.invalidateSize();
+
+                    currentMapInstance.invalidateSize(); // Important to ensure the map renders correctly after container size changes
+
+                    if (mapDataArrayToRender.length === 0) { // If there are no distribution maps at all
+                        mapFilterButtonsContainer.innerHTML = '<p class="text-gray-500 text-center">Tidak ada peta persebaran untuk spesies ini.</p>';
+                    }
+
+                    mapDataArrayToRender.forEach(mapGeoJSON => {
+                        if (mapGeoJSON && typeof mapGeoJSON === 'object' && mapGeoJSON.type) {
+                            const layer = L.geoJSON(mapGeoJSON, {
+                                style: {
+                                    color: '#007bff', /* GeoJSON species line color */
+                                    weight: 3,
+                                    fillColor: '#007bff',
+                                    fillOpacity: 0.5
+                                },
+                                onEachFeature: function (feature, layer) {
+                                    let areaKm2 = 0;
+                                    if (feature.geometry.type === "Polygon" || feature.geometry.type === "MultiPolygon") {
+                                        // Use area_km2 from properties if available, otherwise calculate from GeoJSON
+                                        if (feature.properties && feature.properties.area_km2 !== undefined) {
+                                            areaKm2 = parseFloat(feature.properties.area_km2);
+                                        } else {
+                                            // Ensure L.GeometryUtil is available before using it
+                                            if (typeof L.GeometryUtil !== 'undefined' && layer.getLatLngs) {
+                                                const geojsonArea = L.GeometryUtil.geodesicArea(layer.getLatLngs());
+                                                areaKm2 = (geojsonArea / 1000000);
+                                            }
+                                        }
+                                        layer.bindPopup(`<b>${feature.properties.name || 'Area Persebaran'}</b><br>Luas: ${areaKm2.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km²`);
+                                    } else if (feature.geometry.type === "Point") {
+                                        layer.bindPopup(`<b>${feature.properties.name || 'Titik Persebaran'}</b>`);
+                                    }
+                                    // Store area in feature properties for later access
+                                    feature.properties.calculated_area_km2 = areaKm2;
+                                }
+                            }).addTo(speciesGeoJSONLayer);
+                        }
+                    });
+
+                    currentMapInstance.addLayer(speciesGeoJSONLayer); /* Add species GeoJSON layer */
+
+                    // Update active map state
+                    currentActiveMapState = activeIndex;
+                    // Call updateMapFilterButtonsWithArea here to refresh button display
+                    updateMapFilterButtonsWithArea(speciesDetail.peta_persebaran);
                 }
 
-                /* Render tombol filter peta */
-                const mapCollections = speciesDetail.peta_persebaran || [];
-                mapFilterButtonsContainer.innerHTML = ''; /* Bersihkan tombol sebelumnya */
+                function updateMapFilterButtonsWithArea(allMapData) {
+                    mapFilterButtonsContainer.innerHTML = ''; // Clear previous buttons
 
-                if (mapCollections.length > 0) {
-                    /* Tombol "Lihat Semua Peta" */
-                    const allMapsButton = document.createElement('button');
-                    allMapsButton.textContent = 'Lihat Semua Peta';
-                    allMapsButton.classList.add('active'); /* Aktifkan secara default */
-                    allMapsButton.addEventListener('click', () => {
-                        document.querySelectorAll('#mapFilterButtons button').forEach(btn => btn.classList.remove('active'));
-                        allMapsButton.classList.add('active');
-                        renderSpeciesMap(mapCollections);
-                    });
-                    mapFilterButtonsContainer.appendChild(allMapsButton);
+                    if (allMapData.length > 0) {
+                        /* "Lihat Semua Peta" button */
+                        const allMapsButton = document.createElement('button');
+                        // Remove area info from "Lihat Semua Peta" button
+                        allMapsButton.textContent = `Lihat Semua Peta`;
 
-                    /* Tombol untuk setiap peta individual */
-                    mapCollections.forEach((mapGeoJSON, index) => {
-                        const singleMapButton = document.createElement('button');
-                        singleMapButton.textContent = `Peta ${index + 1}`;
-                        singleMapButton.addEventListener('click', () => {
-                            document.querySelectorAll('#mapFilterButtons button').forEach(btn => btn.classList.remove('active'));
-                            singleMapButton.classList.add('active');
-                            renderSpeciesMap([mapGeoJSON]);
+                        // Check if "Lihat Semua Peta" mode is currently active
+                        if (currentActiveMapState === -1) {
+                            allMapsButton.classList.add('active');
+                        }
+
+                        allMapsButton.addEventListener('click', () => {
+                            // Check if current mode is already "Lihat Semua Peta" to avoid unnecessary re-render
+                            if (currentActiveMapState !== -1) {
+                                renderSpeciesMap(allMapData, -1); // Send -1 to indicate "Lihat Semua Peta" is active
+                            }
                         });
-                        mapFilterButtonsContainer.appendChild(singleMapButton);
-                    });
-                } else {
-                    mapFilterButtonsContainer.innerHTML = '<p class="text-gray-500">Tidak ada peta persebaran yang tersedia.</p>';
+                        mapFilterButtonsContainer.appendChild(allMapsButton);
+
+                        /* Buttons for each individual map */
+                        allMapData.forEach((mapGeoJSON, index) => {
+                            const singleMapButton = document.createElement('button');
+                            let areaToDisplay = 0;
+                            if (mapGeoJSON.geometry.type === "Polygon" || mapGeoJSON.geometry.type === "MultiPolygon") {
+                                if (mapGeoJSON.properties && mapGeoJSON.properties.area_km2 !== undefined) {
+                                    areaToDisplay = parseFloat(mapGeoJSON.properties.area_km2);
+                                } else if (mapGeoJSON.properties && mapGeoJSON.properties.calculated_area_km2 !== undefined) {
+                                    areaToDisplay = parseFloat(mapGeoJSON.properties.calculated_area_km2);
+                                } else {
+                                    // Fallback calculation if not already set or provided in properties
+                                    if (typeof L.GeometryUtil !== 'undefined') {
+                                        const tempLayer = L.geoJSON(mapGeoJSON);
+                                        if (tempLayer.getLayers().length > 0 && tempLayer.getLayers()[0].getLatLngs) {
+                                            areaToDisplay = (L.GeometryUtil.geodesicArea(tempLayer.getLayers()[0].getLatLngs()) / 1000000);
+                                        }
+                                    }
+                                }
+                            }
+
+                            const areaText = areaToDisplay > 0 ? ` (${areaToDisplay.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km²)` : (mapGeoJSON.geometry.type === "Point" ? "" : " (0,00 km²)");
+
+                            singleMapButton.textContent = `Peta ${index + 1}${areaText}`;
+
+                            // Check if this button is active based on index
+                            if (currentActiveMapState === index) {
+                                singleMapButton.classList.add('active');
+                            }
+
+                            singleMapButton.addEventListener('click', () => {
+                                // Check if this map is already active to avoid unnecessary re-render
+                                if (currentActiveMapState !== index) {
+                                    renderSpeciesMap([mapGeoJSON], index); // Only render the clicked map
+                                }
+                            });
+                            mapFilterButtonsContainer.appendChild(singleMapButton);
+                        });
+                    } else {
+                        mapFilterButtonsContainer.innerHTML = '<p class="text-gray-500">Tidak ada peta persebaran yang tersedia.</p>';
+                    }
                 }
 
 
@@ -2130,9 +2231,9 @@
 
                 /* Render Sidebar Taksonomi */
                 const sidebarNavRoot = document.getElementById('taxonomy-nav');
-                sidebarNavRoot.innerHTML = ''; /* Bersihkan konten sebelumnya */
+                sidebarNavRoot.innerHTML = ''; /* Clear previous content */
 
-                /* Tambahkan tombol/header khusus "Semua Invertebrata" */
+                /* Add special "Semua Invertebrata" button/header */
                 const allInvertebrataDiv = document.createElement('div');
                 allInvertebrataDiv.className = `nav-item cursor-pointer text-sm py-1 px-3 rounded-lg font-bold text-white mb-2`;
                 allInvertebrataDiv.innerHTML = `<i class="fas fa-globe mr-2"></i> <span>Semua Invertebrata</span>`;
@@ -2142,22 +2243,24 @@
                 });
                 sidebarNavRoot.appendChild(allInvertebrataDiv);
 
-                /* Render daftar taksonomi utama */
+                /* Render main taxonomy list */
                 renderTaxonomy(taxonomyData["Semua Invertebrata"], sidebarNavRoot, 0, ["Semua Invertebrata"]);
 
-                /* Aktifkan item sidebar dan perbarui breadcrumbs secara dinamis berdasarkan spesies saat ini */
+                /* Activate sidebar item and update dynamic breadcrumbs based on current species */
                 updateActiveTaxonomy(speciesDetail);
                 updateBreadcrumbs(speciesDetail.filum, speciesDetail.subFilum, speciesDetail.kelas, speciesDetail.scientificName);
 
 
-                /* Render peta saat tab "Peta Persebaran" diaktifkan */
+                /* Render map when "Peta Persebaran" tab is activated */
                 document.querySelectorAll('.species-tabs button').forEach(button => {
                     button.addEventListener('click', (event) => {
                         openTab(event, event.target.getAttribute('onclick').split("'")[1]);
 
                         if (event.currentTarget.textContent.includes('Peta Persebaran')) {
                             setTimeout(() => {
-                                renderSpeciesMap(speciesDetail.peta_persebaran);
+                                // When Peta Persebaran tab is active, by default display all maps
+                                // and mark the "Lihat Semua Peta" button as active.
+                                renderSpeciesMap(speciesDetail.peta_persebaran, -1);
                             }, 100);
                         } else {
                             if (speciesMap) {
@@ -2169,7 +2272,7 @@
             }
 
 
-            /* --- Muat Awal Detail Spesies dan Sidebar --- */
+            /* --- Initial Load of Species Detail and Sidebar --- */
             document.addEventListener('DOMContentLoaded', () => {
                 const urlParams = new URLSearchParams(window.location.search);
                 const speciesId = parseInt(urlParams.get('id'));
@@ -2179,17 +2282,18 @@
                     speciesDetail = allSpeciesDetails.find(s => s.id === speciesId);
                 }
 
-                renderSpeciesDetail(speciesDetail); // Panggil fungsi render detail spesies
+                renderSpeciesDetail(speciesDetail); // Call function to render species details
 
                 renderAllComments();
-                document.querySelector('.species-tabs button').click(); // Aktifkan tab pertama secara default
+                // Always activate the first tab (Deskripsi) by default
+                document.querySelector('.species-tabs button').click();
             });
 
-            /* Mendapatkan referensi elemen searchInput dan searchIcon */
+            /* Get references to searchInput and searchIcon elements */
             const searchInput = document.getElementById('searchInput');
             const searchIcon = document.getElementById('searchIcon');
 
-            /* Fungsi untuk melakukan pencarian global dan mengarahkan ke index.html */
+            /* Function to perform global search and redirect to index.html */
             function performGlobalSearchFromDetail() {
                 const query = searchInput.value.trim();
                 if (query) {
@@ -2198,7 +2302,7 @@
                 }
             }
 
-            /* Event listener untuk tombol Enter pada input pencarian */
+            /* Event listener for Enter key on search input */
             searchInput.addEventListener('keydown', function (event) {
                 if (event.key === 'Enter') {
                     event.preventDefault();
@@ -2206,7 +2310,7 @@
                 }
             });
 
-            /* Event listener untuk klik ikon pencarian */
+            /* Event listener for clicking the search icon */
             searchIcon.addEventListener('click', function () {
                 performGlobalSearchFromDetail();
             });
