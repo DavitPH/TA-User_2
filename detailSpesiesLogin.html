@@ -1037,6 +1037,14 @@
         #taxonomy-nav ul.space-y-1.ml-4.border-l {
             border-color: rgba(255, 255, 255, 0.3);
         }
+
+        /* CUSTOM STYLES FOR CONSERVATION STATUS LABEL */
+        #conservationStatus {
+            background-color: #EBEBEB;
+            /* Latar belakang abu-abu EBEBEB */
+            color: #124E0B;
+            /* Warna teks hijau 124E0B */
+        }
     </style>
 </head>
 
@@ -1084,7 +1092,7 @@
                         <div>
                             <h1 id="speciesCommonName">
                                 <span id="conservationStatus"
-                                    class="bg-gray-800 bg-opacity-70 text-white text-sm font-normal px-2 py-1 rounded-full whitespace-nowrap"></span>
+                                    class="text-sm font-normal px-2 py-1 rounded-full whitespace-nowrap"></span>
                             </h1>
                             <p class="mt-1" id="speciesScientificName"></p>
                         </div>
@@ -1940,7 +1948,7 @@
                 /* Perbarui Header */
                 const speciesCommonNameElement = document.getElementById('speciesCommonName');
                 speciesCommonNameElement.innerHTML = `${speciesDetail.name} <span id="conservationStatus"
-                                    class="bg-gray-800 bg-opacity-70 text-white text-sm font-normal px-2 py-1 rounded-full whitespace-nowrap"></span>`;
+                                    class="text-sm font-normal px-2 py-1 rounded-full whitespace-nowrap"></span>`; // Kelas bg-gray-800 bg-opacity-70 text-white dihapus dari sini
                 document.getElementById('speciesScientificName').textContent = speciesDetail.scientificName;
                 document.getElementById('conservationStatus').textContent = speciesDetail.conservationStatus || 'N/A';
                 document.title = `Detail Spesies - ${speciesDetail.scientificName}`;
